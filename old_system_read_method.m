@@ -1,4 +1,4 @@
-function [traj,Method_Params] = read_method(path)
+function [traj,Method_Params] = old_system_read_method(path)
 %% Function to Read a Bruker Method File and return any parameters of interest
 %Return a structure containing all the data that we care about
 
@@ -124,8 +124,15 @@ if Length_X > 1
     trajx = trajx(1:(end-NumExtra));
     trajy = trajy(1:(end-NumExtra));
     
+    trajx_shift_val = mean(trajx(1:AcqShift));
+    trajy_shift_val = mean(trajy(1:AcqShift));
+    
+    trajx = trajx - trajx_shift_val; %These have a non-zero value at the beginning - get rid of that here
+    trajy = trajy - trajy_shift_val;
     if contains(Dims,'3D')
         trajz = trajz(1:(end-NumExtra));
+        trajz_shift_val = mean(trajz(1:AcqShift));
+        trajz = trajz - trajz_shift_val;
     else
         trajz = zeros(size(trajx));
     end
@@ -140,10 +147,6 @@ else
         SliceGrad = 0;
         for index=1:size(methodRead,1)
             testStr=char(methodRead{index});
-            if contains(testStr,'##$PVM_EffSWh=') %Bandwidth
-                Bandwidth = str2num(testStr(15:end));
-                Dwell = 1/Bandwidth;
-            end
             if contains(testStr,'##$GradShape') %Theoretical Gradient Shape
                 GradShapeStart = index;
                 GradShapePts = str2num(testStr(14:end));
@@ -158,7 +161,10 @@ else
             end
             if contains(testStr,'##$RampPoints') %Number of points for Ramp Compensation
                 RampPoints = str2num(testStr(15:end));
-            end 
+            end
+            if contains(testStr,'##$PVM_DigDw') %Dwell Time
+                Dwell = str2num(testStr(14:end));
+            end
             if contains(testStr,'##$FlybackYN') %Flyback Yes or No
                 FlybackYN = testStr(14:end);
             end
@@ -236,6 +242,9 @@ else
             if contains(testStr,'##$GradRes') %Gradient Shape Resolution
                 GradRes=str2num(testStr(12:end));
             end
+            if contains(testStr,'##$PVM_DigDw') %Dwell Time
+                Dwell = str2num(testStr(14:end));
+            end
             if contains(testStr,'##$PVM_DigNp') %Number of points before Ramp Compensation
                 NumPts=str2num(testStr(14:end));
             end
@@ -295,9 +304,11 @@ for index=1:size(methodRead,1)
         FileLoc = methodRead{index+2};
         Method_Params.File = FileLoc;
     end
-  
-    Method_Params.AcqShift = 0;
- 
+    if contains(testStr,'##$AcqShift') %Number of points for acquisition shift
+        AcqShift=str2num(testStr(13:end));
+        EchoTimesEnd = index; %AcqShift comes after EchoTimes, so for a scan with lots of echo times, we want the end index
+        Method_Params.AcqShift = AcqShift;
+    end
     if contains(testStr,'##$NPro') %Number of Projections
         NPro=str2num(testStr(9:end));
         Method_Params.NPro = NPro;
@@ -306,9 +317,9 @@ for index=1:size(methodRead,1)
         NumTEs=str2num(testStr(11:end));
         Method_Params.NumTEs = NumTEs;
     end
-
-    EchoTimesStart = 1; % no multiecho 
- 
+    if contains(testStr,'##$EchoTimes=') %Echo Times (just the indices - read out at the end)
+        EchoTimesStart = index;
+    end
     if contains(testStr,'##$SlabSelectYN=') %Are we slab selective?
         SlabYN = testStr(17:end);
         Method_Params.SlabYN = SlabYN;
@@ -345,9 +356,13 @@ for index=1:size(methodRead,1)
         RampPoints = str2num(testStr(15:end));
         Method_Params.RampPoints = RampPoints;
     end
+    if contains(testStr,'##$PVM_DigDw') %Dwell Time
+        Dwell = str2num(testStr(14:end));
+        Method_Params.Dwell = Dwell;
+    end
     if contains(testStr,'##$FlybackYN') %Flyback Yes or No
         FlybackYN = testStr(14:end);
-        Method_Params.FlybackYN = 'No';
+        Method_Params.FlybackYN = FlybackYN;
     end
     if contains(testStr,'##$FlybackPts') %Flyback Yes or No
         FlybackPts = testStr(15:end);
@@ -381,7 +396,6 @@ for index=1:size(methodRead,1)
     if contains(testStr,'##$PVM_EffSWh=') %Bandwidth
         Bandwidth = str2num(testStr(15:end));
         Method_Params.Bandwidth = Bandwidth;
-        Method_Params.Dwell = 1/Method_Params.Bandwidth;
     end
     if contains(testStr,'##$PVM_AcquisitionTime=') %Acquisition Time
         AcqTime = str2num(testStr(24:end));
@@ -441,7 +455,10 @@ for index=1:size(methodRead,1)
         FOV = str2num(methodRead{index+1});
         Method_Params.FOV = FOV;
     end    
-   
+    if contains(testStr,'##$DiffusionYN=') %Diffusion Encoding YN
+        DiffusionYN = testStr(16:end);
+        Method_Params.DiffusionYN = DiffusionYN;
+    end    
     if contains(testStr,'##$Nbvalue=') %Diffusion Encoding YN
         Nbvalue = str2num(testStr(12:end));
         Method_Params.Nbvalue = Nbvalue;
@@ -557,7 +574,13 @@ for index=1:size(methodRead,1)
     end
 end
 if strcmp(Seq,'Radial')
-  
+    TEs = [];
+    for i = (EchoTimesStart+1):(EchoTimesEnd-1)
+        TEhold = methodRead{i};
+        TEhold = str2num(TEhold);
+        TEs = [TEs TEhold];
+    end
+    Method_Params.TE = TEs;
     %% Rotate Projections according to golden means acquisition
     phi1 = 0.46557123;
     phi2 = 0.6823278;
@@ -689,6 +712,3 @@ elseif strcmp(Seq,'Spiral')
         end
     end
 end
-Method_Params.DiffusionYN = 'No';
-Method_Params.FlybackYN = 'No';
-Method_Params.NumTEs = 1; 

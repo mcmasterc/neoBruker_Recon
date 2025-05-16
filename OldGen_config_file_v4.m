@@ -1,4 +1,4 @@
-function gen_config_file_v4(path)
+function OldGen_config_file_v4(path)
 
 %Function to write out a configuration file for xenon images of mice -
 %write to a text file things like date of birth, scan type, mouse type,
@@ -79,19 +79,24 @@ else
         testStr=char(methodRead{index});
         if contains(testStr,'##$AcqShift') %Number of points for acquisition shift
             AcqShift=str2num(testStr(13:end));
-        else
-            AcqShift=0;
         end
         if contains(testStr,'##$NPro') %Number of Projections
             NPro=str2num(testStr(9:end));
         end
         if contains(testStr,'##$NumTEs=') %NumTEs
             NumTEs=str2num(testStr(11:end));
-        else
-            NumTEs=1;
+        end
+        if contains(testStr,'##$FlybackYN') %Flyback Yes or No
+            FlybackYN = testStr(14:end);
         end
         if contains(testStr,'##$Method')
             Method=(testStr(11:end));
+        end
+        if contains(testStr,'##$DiffusionYN=') %Diffusion Encoding YN
+            DiffusionYN = testStr(16:end);
+        end    
+        if contains(testStr,'##$Nbvalue=') %Diffusion Encoding YN
+            Nbvalue = str2num(testStr(12:end));
         end  
         if contains(testStr,'##$PVM_SPackArrNSlices=') %Undersampling Parameters
             NSlices = str2num(methodRead{index+1});
@@ -112,11 +117,19 @@ else
         error('Cannot Determine Sequence Type')
     end
 
-    fid_File = dir('*.job0'); 
-    FIDs = Bruker_Load(fid_File.name);
+
+    FIDs = Bruker_Load('fid');
     if strcmp(Seq,'Radial')
+        if strcmp(FlybackYN,'Yes')
+            FIDs = reshape(FIDs,[],NPro*Repetitions);
+            Nk0 = NPro*Repetitions;
+        elseif strcmp(DiffusionYN,'Yes')
+            FIDs = reshape(FIDs,[],NPro*NumTEs*Nbvalue*Repetitions);
+            Nk0 = NPro*NumTEs*Nbvalue*Repetitions;
+        else
             FIDs = reshape(FIDs,[],NPro*NumTEs*Repetitions);
             Nk0 = NPro*NumTEs*Repetitions;
+        end
     else
        % if strcmp(DiffusionYN,'No')
             FIDs = reshape(FIDs,[],NPro*NSlices*Repetitions);
@@ -136,7 +149,6 @@ else
     FIDs(1:AcqShift,:) = [];
 
     %% Get parameters from the scan
-    
     ScanType = questdlg('Did you image a mouse or phantom?','Scan Type','Mouse','Phantom','Mouse'); 
     if strcmp(ScanType,'Mouse')
         %get sex
@@ -200,28 +212,24 @@ else
     k0figA = figure('Name','First Point of FIDs','units','normalized','outerposition',[0 0.04 1 .96]);
     plot(1:Nk0,squeeze(abs(FIDs(1,:))),'k-*')
 
-    if true
-      From_Begin = '0';
-      From_End = '0';
+    Throw_Away = questdlg('Do any points need to be discarded?','Discard Points','Yes','No','No'); 
+    if strcmp(Throw_Away,'Yes')
+        prompt = {'Discard from Beginning','Discard From End'};
+        name = 'Discarding Points';
+        dims = [1 100];
+        definput = {'0','0'};
+        Discard_Pts = inputdlg(prompt,name,dims,definput);
+        From_Begin = Discard_Pts{1,1};
+        From_End = Discard_Pts{2,1};
     else
-        Throw_Away = questdlg('Do any points need to be discarded?','Discard Points','Yes','No','No'); 
-        if strcmp(Throw_Away,'Yes')
-            prompt = {'Discard from Beginning','Discard From End'};
-            name = 'Discarding Points';
-            dims = [1 100];
-            definput = {'0','0'};
-            Discard_Pts = inputdlg(prompt,name,dims,definput);
-            From_Begin = Discard_Pts{1,1};
-            From_End = Discard_Pts{2,1};
-        else
-            From_Begin = '0';
-            From_End = '0';
-        end
-    end 
+        From_Begin = '0';
+        From_End = '0';
+    end
+
     prompt = {'Trajectory Delay (In Multiples of Dwell Time)'};
     name = 'Trajectory Delay';
     dims = [1 100];
-    definput = {'1'};
+    definput = {'0'};
     traj_delay = inputdlg(prompt,name,dims,definput);
     Traj_Delay = traj_delay{1,1};
 

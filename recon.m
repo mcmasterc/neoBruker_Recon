@@ -1,4 +1,4 @@
-function recon(path,fast_recon)
+function recon(path,fast_recon,old_system)
 
 %set fast_recon to "true" (or "1") to skip keyholing and other slow steps so that you can quickly get a reconstructed image 
 if nargin == 0
@@ -12,11 +12,22 @@ else
     cd(path)
 end
 
+%--------test-----------
+if ~exist('old_system','var')
+    old_system = 0; 
+end
+%----------------------
+
 %Make sure that folder contains a method file and a fid file
 %Sometimes I rename method file things like measured_Method, so make sure
 %to accomodate this sort of thing
 Method_Files = dir('*ethod*');
-fid_File = dir('fid*');
+if old_system == 0
+    fid_File = dir('*.job0');
+elseif old_system == 1
+    fid_File = dir('fid');
+end
+
 if isempty(Method_Files)
     error('Unable to find a method file in the specified path')
 elseif isempty(fid_File)
@@ -30,14 +41,25 @@ end
 %% Read in Configuration File
 %If it doesn't exist, create one
 ConfigPresent = exist(fullfile(path,'ConfigFile_V4.txt'),'file');
-if ConfigPresent == 0
-    gen_config_file_v4(path)
+if old_system == 0
+    if ConfigPresent == 0
+        gen_config_file_v4(path)
+    end
+elseif old_system == 1
+     if ConfigPresent == 0
+        OldGen_config_file_v4(path)
+    end
 end
+
 Config_Params = read_config_file_v4(path);
 
 %% Read Method File
 disp('Reading Method File')
-[traj,Method_Params] = read_method(path);
+if old_system == 0
+    [traj,Method_Params] = read_method(path);
+elseif old_system == 1
+    [traj,Method_Params] = old_system_read_method(path);
+end
 
 %If we are doing a phantom, want to pretend that we are triggered so that
 %we don't try to retrogate (which would be pointless)
@@ -49,7 +71,11 @@ end
 %If - else should be fine here, because read_method will break if it can't
 %determine whether we are spiral or radial.
 if strcmp(Method_Params.Sequence,'Radial')
-    [Dir_Name,recon_def] = radial_recon(path,traj,Method_Params,Config_Params,fast_recon);
+   if old_system == 1
+       [Dir_Name,recon_def] = old_system_radial_recon(path,traj,Method_Params,Config_Params,fast_recon);
+   elseif old_system == 0
+       [Dir_Name,recon_def] = radial_recon(path,traj,Method_Params,Config_Params,fast_recon);
+   end
 else
     [Dir_Name,recon_def] = spiral_recon(path,traj,Method_Params,Config_Params,fast_recon);
 end

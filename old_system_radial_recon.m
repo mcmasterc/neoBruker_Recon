@@ -1,4 +1,4 @@
-function [Dir_Name,recon_def] = radial_recon(path,traj,Method_Params,Config_Params,fast_recon)
+function [Dir_Name,recon_def] = old_system_radial_recon(path,traj,Method_Params,Config_Params,fast_recon)
 
 %Total reconstruction for "clean UTE" in Bruker - currently named
 %pn_cleanUTE - will be renamed for the final version
@@ -31,8 +31,7 @@ elseif strcmp(Method_Params.Traj_Type,'theoretical')
 end
 %% Read in FIDs
 disp('Reading FID File')
-fid_File = dir('*.job0'); 
-FIDs = Bruker_Load(fid_File.name);
+FIDs = Bruker_Load('fid');
 %Reshape FIDs accounting for NPro, NumTEs, and Number of b values
 if strcmp(Method_Params.FlybackYN,'Yes') 
     FIDs = reshape(FIDs,[],Method_Params.NPro*Method_Params.Repetitions);%,Method_Params.Repetitions);
@@ -171,7 +170,7 @@ end
 mkdir(Dir_Name);
 
 %% Deal with Retrospective Gating
-if strcmp(Method_Params.Trigger,'Off') && strcmp(Method_Params.Nucleus,'<1H>')
+if strcmp(Method_Params.FlybackYN,'No') && strcmp(Method_Params.Trigger,'Off') && strcmp(Method_Params.Nucleus,'<1H>')
     %If we're imaging proton in a mouse and it's not triggered, we need to
     %do retrospective gating - The config file is used to crop points, so I
     %don't need to bother with that here.
