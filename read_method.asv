@@ -248,6 +248,11 @@ for index=1:size(methodRead,1)
     end
    
 
+
+    if contains(testStr,'##$IAcqTime=') %Acquisition Time
+        SpROTime = str2num(testStr(13:end));
+        Method_Params.SpROTime = SpROTime;
+    end
     if contains(testStr,'##$PVM_SPackArrNSlices=') %Undersampling Parameters
         NSlices = str2num(methodRead{index+1});
         Method_Params.NSlices = NSlices;
@@ -264,29 +269,22 @@ for index=1:size(methodRead,1)
         SliceThick = str2num(testStr(18:end));
         Method_Params.SliceThick = SliceThick;
     end
-    %========Maybe ##$PVM_TrajInterleaves now....=========
-    % if contains(testStr,'##$NInterleaves=') %Slice Thickness
-    %     Interleaves = str2num(testStr(17:end));
-    %     Method_Params.Interleaves = Interleaves;
-    % end
-%==========================================================
-
-    if contains(testStr,'##$PVM_TrajGradX')
-        %Method_Params.Gradx = str2num(testStr(13:end));
+    if contains(testStr,'##$NInterleaves=') %Slice Thickness
+        Interleaves = str2num(testStr(17:end));
+        Method_Params.Interleaves = Interleaves;
     end
-    if contains(testStr,'##$PVM_TrajGradY')
-        %Method_Params.GradY = str2num(testStr(14:end));
+    if contains(testStr,'##$ReadGrad')
+        Method_Params.ReadGrad = str2num(testStr(13:end));
     end
-    if contains(testStr,'##$PVM_TrajGradZ')
-        %Method_Params.SliceGrad = str2num(testStr(14:end));
+    if contains(testStr,'##$PhaseGrad')
+        Method_Params.PhaseGrad = str2num(testStr(14:end));
     end
-
-    
-    %====Maybe tagged ##$PostPoints= now.....
-    % if contains(testStr,'##$ExtraPoints')
-    %     Method_Params.ExtraPoints = str2num(testStr(16:end));
-    % end
-    %==================================================
+    if contains(testStr,'##$SliceGrad')
+        Method_Params.SliceGrad = str2num(testStr(14:end));
+    end
+    if contains(testStr,'##$ExtraPoints')
+        Method_Params.ExtraPoints = str2num(testStr(16:end));
+    end
 end
 
   
