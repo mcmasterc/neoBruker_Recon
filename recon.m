@@ -54,8 +54,8 @@ end
 Config_Params = read_config_file_v4(path);
 
 %% Read Method File
-disp('Reading Method File')
 if old_system == 0
+    %disp('Reading Method File')
     [traj,Method_Params] = read_method(path);
 elseif old_system == 1
     [traj,Method_Params] = old_system_read_method(path);
@@ -74,7 +74,7 @@ if strcmp(Method_Params.Sequence,'Radial')
    if old_system == 1
        [Dir_Name,recon_def] = old_system_radial_recon(path,traj,Method_Params,Config_Params,fast_recon);
    elseif old_system == 0
-       [Dir_Name,recon_def] = radial_recon(path,traj,Method_Params,Config_Params,fast_recon);
+       [Dir_Name,recon_def] = radial_recon_01July2025(path,traj,Method_Params,Config_Params,fast_recon);
    end
 else
     [Dir_Name,recon_def] = spiral_recon(path,traj,Method_Params,Config_Params,fast_recon);
@@ -118,26 +118,26 @@ fprintf(fileID,['Number of Acquisition Shift Points = ' num2str(Method_Params.Ac
 fprintf(fileID,['Averages = ' num2str(Method_Params.Averages) '\n']);
 fprintf(fileID,['Repetitions = ' num2str(Method_Params.Repetitions) '\n']);
 fprintf(fileID,['Excitation Pulse Parameters = ' Method_Params.PulseParams '\n']);
-fprintf(fileID,['Slab Selection = ' Method_Params.SlabYN '\n']);
-if strcmp(Method_Params.SlabYN,'Yes')
-    fprintf(fileID,['Slab Thickness = ' num2str(Method_Params.SlabThickness) '\n']);
-end
-fprintf(fileID,['Diffusion Encoding = ' Method_Params.DiffusionYN '\n']);
-if strcmp(Method_Params.DiffusionYN,'Yes')
-    fprintf(fileID,['Number of b values = ' num2str(Method_Params.Nbvalue) '\n']);
-    fprintf(fileID,['b values = ' num2str(Method_Params.bvalues) '\n']);
-    fprintf(fileID,['delta = ' num2str(Method_Params.delta) '\n']);
-    fprintf(fileID,['Delta = ' num2str(Method_Params.Delta) '\n']);
-end
+%fprintf(fileID,['Slab Selection = ' Method_Params.SlabYN '\n']);
+% if strcmp(Method_Params.SlabYN,'Yes')
+%     fprintf(fileID,['Slab Thickness = ' num2str(Method_Params.SlabThickness) '\n']);
+% end
+% fprintf(fileID,['Diffusion Encoding = ' Method_Params.DiffusionYN '\n']);
+% if strcmp(Method_Params.DiffusionYN,'Yes')
+%     fprintf(fileID,['Number of b values = ' num2str(Method_Params.Nbvalue) '\n']);
+%     fprintf(fileID,['b values = ' num2str(Method_Params.bvalues) '\n']);
+%     fprintf(fileID,['delta = ' num2str(Method_Params.delta) '\n']);
+%     fprintf(fileID,['Delta = ' num2str(Method_Params.Delta) '\n']);
+% end
 fprintf(fileID,'\n');
 fprintf(fileID,['*****************************************************************' '\n']);
 fprintf(fileID,'\n');
 fprintf(fileID,['***Method Specific Imaging Parameters***' '\n']);
 if strcmp(Method_Params.Sequence,'Radial')
-    fprintf(fileID,['Measure EchoTimes with Flyback = ' Method_Params.FlybackYN '\n']);
+   % fprintf(fileID,['Measure EchoTimes with Flyback = ' Method_Params.FlybackYN '\n']);
     fprintf(fileID,['Number of Projections = ' num2str(Method_Params.NPro) '\n']);
     fprintf(fileID,['Sampling Percentage = ' num2str((1/Method_Params.USamp)*100) '%%' '\n']);
-    fprintf(fileID,['Play out Rewinder = ' Method_Params.Rewinder '\n']);
+  %  fprintf(fileID,['Play out Rewinder = ' Method_Params.Rewinder '\n']);
 else
     fprintf(fileID,['Number of Spiral Projections = ' num2str(Method_Params.NPro) '\n']);
     fprintf(fileID,['Spiral Interleaves Parameter = ' num2str(Method_Params.Interleaves) '\n']);
@@ -163,7 +163,7 @@ fprintf(fileID,'\n');
 fprintf(fileID,['*****************************************************************' '\n']);
 fprintf(fileID,'\n');
 fprintf(fileID,['***Reconstruction Parameters***' '\n']);
-fprintf(fileID,['Trajectory Delay = ' num2str(recon_def.Params.traj_delay) ' (*Dwell)' '\n']);
+%fprintf(fileID,['Trajectory Delay = ' num2str(recon_def.Params.traj_delay) ' (*Dwell)' '\n']);
 fprintf(fileID,['Recon Function = ' recon_def.Params.Recon_Func '\n']);
 fprintf(fileID,['Kernel Sharpness = ' num2str(recon_def.Params.KernelSharpness) '\n']);
 fprintf(fileID,['Kernel Extent = ' num2str(recon_def.Params.KernelExtent) '\n']);
